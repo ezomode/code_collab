@@ -1,0 +1,50 @@
+<idea-plugin>
+    <id>code_collab</id>
+    <name>Demo multi-user document editing</name>
+
+    <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+
+    <description><![CDATA[
+    Demo
+    ]]></description>
+
+    <idea-version since-build="172" />
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
+
+    <!--<application-components>
+        <component>
+            <implementation-class>MyApplicationComponent</implementation-class>
+        </component>
+    </application-components>-->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <applicationService serviceImplementation="service.MainService" />
+        <applicationService serviceImplementation="service.NetworkService" />
+    </extensions>
+
+    <actions>
+        <group id="CollabPlugin.CollaborateMenu" text="Collaborate" description="Collaborate on this project">
+            <add-to-group group-id="MainMenu" anchor="last" />
+
+            <action id="action.OpenSocketAction" class="action.OpenSocketAction" text="Open Local Socket" />
+            <action id="action.RemoteConnectAction" class="action.RemoteConnectAction" text="Connect to Remote" />
+            <action id="action.DisconnectAction" class="action.DisconnectAction" text="Disconnect" />
+
+            <action id="action.GrabWriteLockAction" class="action.GrabWriteLockAction" text="Grab lock" />
+            <action id="action.StatusAction" class="action.StatusAction" text="Status" description="Plugin Status Info" />
+            <!--<action id="action.ManualSendAction" class="action.ManualSendAction" text="Send" />-->
+        </group>
+    </actions>
+
+    <project-components>
+        <component>
+            <implementation-class>MyProjectComponent</implementation-class>
+        </component>
+    </project-components>
+</idea-plugin>
