@@ -6,7 +6,7 @@ import model.State
 import service.MainService
 import service.NetworkService
 
-class OpenSocketAction : AnAction("Open Local Socket") {
+class OpenSocketAction : AnAction("Create Session") {
 
   override fun actionPerformed(event: AnActionEvent) {
 
