@@ -10,7 +10,7 @@ class GrabWriteLockAction : AnAction("Grab Lock") {
 
   override fun actionPerformed(event: AnActionEvent) {
 
-    MainService.getInstance().grabLock()
+    event.project?.let { MainService.getInstance().grabLock(it.name) }
   }
 
   override fun update(e: AnActionEvent) {
