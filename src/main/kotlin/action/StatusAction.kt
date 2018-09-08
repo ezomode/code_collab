@@ -6,7 +6,7 @@ import com.intellij.openapi.ui.Messages
 import service.MainService
 
 // For debug purposes
-class StatusAction : AnAction(STATUS) {
+class StatusAction : AnAction() {
 
   override fun actionPerformed(event: AnActionEvent) {
     val service = MainService.getInstance()
@@ -16,16 +16,8 @@ class StatusAction : AnAction(STATUS) {
     Messages.showMessageDialog(event.project, service.getStatus(), "Plugin Status Info", Messages.getInformationIcon())
   }
 
-  override fun update(e: AnActionEvent?) {
+  override fun update(e: AnActionEvent) {
 
-    val service = MainService.getInstance()
-    val state = service.state
-
-    e!!.presentation.text = STATUS + state
-  }
-
-  companion object {
-
-    val STATUS = "Status: "
+    e.presentation.text = "State: " + MainService.getInstance().state
   }
 }
