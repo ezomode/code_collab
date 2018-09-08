@@ -17,6 +17,6 @@ class OpenSocketAction : AnAction("Create Session") {
 
     val service = MainService.getInstance()
 
-    e.presentation.isVisible = service.state == State.IDLE
+    e.presentation.isVisible = service.state.value == State.IDLE
   }
 }

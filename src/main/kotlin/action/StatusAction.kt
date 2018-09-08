@@ -18,6 +18,6 @@ class StatusAction : AnAction() {
 
   override fun update(e: AnActionEvent) {
 
-    e.presentation.text = "State: " + MainService.getInstance().state
+    e.presentation.text = "State: " + MainService.getInstance().state.value
   }
 }

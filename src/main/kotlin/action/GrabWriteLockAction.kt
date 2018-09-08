@@ -17,6 +17,6 @@ class GrabWriteLockAction : AnAction("Grab Lock") {
 
     val mainService = MainService.getInstance()
 
-    e.presentation.isVisible = mainService.state == State.READER
+    e.presentation.isVisible = mainService.state.value == State.READER
   }
 }
