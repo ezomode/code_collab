@@ -8,3 +8,4 @@
 
 ##### Limitations:
 - While in read-only mode, internal exceptions will are thrown upon edit attempts
+- Functional tests are in draft state
