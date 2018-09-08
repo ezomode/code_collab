@@ -32,11 +32,11 @@
         <group id="CollabPlugin.CollaborateMenu" text="Collaborate" description="Collaborate on this project">
             <add-to-group group-id="MainMenu" anchor="last" />
 
-            <action id="action.OpenSocketAction" class="action.OpenSocketAction" text="Open Local Socket" />
-            <action id="action.RemoteConnectAction" class="action.RemoteConnectAction" text="Connect to Remote" />
+            <action id="action.OpenSocketAction" class="action.OpenSocketAction" text="Create Session" />
+            <action id="action.RemoteConnectAction" class="action.RemoteConnectAction" text="Join Session" />
             <action id="action.DisconnectAction" class="action.DisconnectAction" text="Disconnect" />
 
-            <action id="action.GrabWriteLockAction" class="action.GrabWriteLockAction" text="Grab lock" />
+            <action id="action.GrabWriteLockAction" class="action.GrabWriteLockAction" text="Grab Lock" />
             <action id="action.StatusAction" class="action.StatusAction" text="Status" description="Plugin Status Info" />
             <!--<action id="action.ManualSendAction" class="action.ManualSendAction" text="Send" />-->
         </group>
