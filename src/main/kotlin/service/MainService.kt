@@ -1,6 +1,8 @@
 package service
 
+import com.beust.klaxon.Klaxon
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -11,6 +13,8 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.util.containers.ContainerUtil
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
@@ -20,26 +24,25 @@ import model.State
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+
 class MainService {
 
   private val LOG = Logger.getInstance(MainService::class.java)
 
-  var state = State.IDLE
-    set(v) = stateSubject.onNext(v)
+  var state = BehaviorSubject.createDefault(State.IDLE)!! // interesting warning on nullability check, could not infer non-nullable without !!
 
-  var stateSubject = BehaviorSubject.createDefault(State.IDLE)
+  val documentUpdate: Subject<Triple<Project, Document, VirtualFile>> = PublishSubject.create()
 
-  var previousDocument: Document? = null
-  var previousDocumentText = ""
-
-  val documentUpdates: Subject<Triple<Project, Document, VirtualFile>> = PublishSubject.create()
-
-  val messageSubject: Subject<Message> = PublishSubject.create()
+  val incomingMessage: Subject<Message> = PublishSubject.create()
 
   init {
-    documentUpdates.debounce(200, TimeUnit.MILLISECONDS).subscribe(this@MainService::sendDocument)
+    documentUpdate.debounce(200, TimeUnit.MILLISECONDS).subscribe(this@MainService::sendDocument)
 
-    messageSubject.subscribe(::handleIncomingMessage)
+    incomingMessage.subscribe(::handleIncomingMessage)
+
+    state.subscribe { LOG.debug(it.name) }
+    documentUpdate.subscribe { LOG.debug(it.toString()) }
+    incomingMessage.subscribe { LOG.debug(it.json()) }
   }
 
   private fun sendDocument(triple: Triple<Project, Document, VirtualFile>) {
@@ -48,76 +51,98 @@ class MainService {
     val document = triple.second
     val virtualFile = triple.third
 
-    val text = document.text
+    val path = getProjectRelativePath(project, virtualFile)
 
-    if (document !== previousDocument && previousDocumentText != text) {
+    val message = Message(
+            type = MessageType.UPDATE_DOC,
+            projectName = project.name,
+            path = path,
+            text = document.text
+    ).json()
 
-      val projectRelativePath = getProjectRelativePath(project, virtualFile)
+    NetworkService.getInstance().send(message)
 
-      val message = Message(MessageType.UPDATE_DOC, document.text, projectRelativePath).json()
-
-      NetworkService.getInstance().send(message)
-
-      println("Send update for $projectRelativePath")
-    }
+    LOG.debug("Send message: $message")
   }
 
   private fun handleIncomingMessage(m: Message) {
 
     when (m.type) {
       MessageType.GRAB_LOCK -> {
-        if (state == State.WRITER) state = (State.READER)
+        if (state.value == State.WRITER) {
+          state.onNext(State.READER)
+        }
       }
 
+      // TODO: see if possible to simplify - almost duplicate code as for OPEN_DOC.
       MessageType.UPDATE_DOC -> {
 
-        val virtualFile = findVirtualFile(m)
+        val project = findProject(m.projectName)
+        val virtualFile = project?.let { findVirtualFile(project, m) }
 
-        virtualFile?.let {
+        if (project != null) {
+          if (virtualFile != null) {
 
-          ApplicationManager.getApplication().invokeLater {
-            FileEditorManager
-                    .getInstance(getFirstOpenProject())
-                    .openFile(virtualFile, true)
+            WriteCommandAction.runWriteCommandAction(project) {
+              val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+              document?.setReadOnly(false)
+              document?.setText(m.text)
+              document?.setReadOnly(true)
+            }
+//            VfsUtil.saveText(virtualFile, m.text)
 
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
-            document?.setText(m.payload)
-          }
-        }
-      }
+            openVirtualFile(project, virtualFile)
 
-// Simplify messaging - open file on each update.
-/*
-      MessageType.OPEN_DOC -> {
-        val virtualFile = findVirtualFile(m)
-
-        if (virtualFile != null) {
-          ApplicationManager.getApplication().invokeLater {
-            FileEditorManager
-                    .getInstance(getFirstOpenProject())
-                    .openFile(virtualFile, true)
+          } else {
+            LOG.error("VirtualFile not found at relative path ${m.path}")
           }
         } else {
-          println("VirtualFile not found at relative path ${m.path}")
+          LOG.error("Project with name=${m.projectName} not found!")
         }
       }
-*/
+
+      MessageType.OPEN_DOC -> {
+        val project = findProject(m.projectName)
+        val virtualFile = project?.let { findVirtualFile(project, m) }
+
+        if (project != null) {
+          if (virtualFile != null) {
+
+            openVirtualFile(project, virtualFile)
+
+          } else {
+            LOG.error("VirtualFile not found at relative path ${m.path}")
+          }
+        } else {
+          LOG.error("Project with name=${m.projectName} not found!")
+        }
+      }
     }
 
   }
 
-  fun findVirtualFile(m: Message): VirtualFile? {
-//    val project = getFirstOpenProject()
-//
-//    val projectBasePath = project.basePath!!
-//    val filePath = projectBasePath + m.path
+  fun openVirtualFile(project: Project, virtualFile: VirtualFile) {
+    ApplicationManager.getApplication().invokeLater {
+      FileEditorManager
+              .getInstance(project)
+              .openFile(virtualFile, true)
+    }
+  }
+
+  fun findVirtualFile(project: Project, m: Message): VirtualFile? {
+
+    val projectBasePath = project.basePath!!
+    val filePath = projectBasePath + m.path
+
 //    VfsUtilCore.fixIDEAUrl()
 
+    val ioFile = File(FileUtil.toSystemDependentName(filePath))
 
-    val ioFile = File(FileUtil.toSystemDependentName(m.path))
-    val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(ioFile)
+    if (ioFile.exists())
+      return LocalFileSystem.getInstance().refreshAndFindFileByIoFile(ioFile)
 
-    return virtualFile
+
+    return VirtualFileManager.getInstance().refreshAndFindFileByUrl(m.path) // fall back for temp files from tests
   }
 
   companion object {
@@ -134,30 +159,29 @@ class MainService {
 //            if (!filePath.startsWith(projectBasePath))
 //                throw IllegalArgumentException("Not a permanent project file") // Scratch files and other non-project files are not supported.
 
-    val projectRelativePath = filePath.removePrefix(projectBasePath)
-
-    LOG.debug("")
-
-    return projectRelativePath
+    return filePath.removePrefix(projectBasePath)
   }
 
   fun getStatus(): String {
-    return this.toString()
+    return Klaxon().toJsonString(this)
   }
 
-  fun grabLock() {
-    if (state == State.READER) {
+  fun grabLock(projectName: String) {
+    if (state.value == State.READER) {
 
-      val message = Message(MessageType.GRAB_LOCK).json()
+      val message = Message(MessageType.GRAB_LOCK, projectName).json()
 
       NetworkService.getInstance().send(message)
 
-      state = State.WRITER
+      state.onNext(State.WRITER)
     }
   }
 
-  fun getFirstOpenProject(): Project {
-    return ProjectManager.getInstance().openProjects.first()
+  fun findProject(projectName: String): Project? {
+
+    val projects = ProjectManager.getInstance().openProjects
+
+    return ContainerUtil.find(projects) { project1 -> projectName == project1.name }
   }
 }
 
