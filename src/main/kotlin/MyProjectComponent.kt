@@ -5,12 +5,16 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import model.Message
+import model.MessageType
 import model.State
 import org.jetbrains.annotations.NotNull
 import service.MainService
+import service.NetworkService
 
 class MyProjectComponent(project: Project) : AbstractProjectComponent(project) {
 
@@ -23,7 +27,7 @@ class MyProjectComponent(project: Project) : AbstractProjectComponent(project) {
 
 /*
     myProject.messageBus
-            .connect()
+            .connectRemote()
             .subscribe(AppTopics.FILE_DOCUMENT_SYNC, object : FileDocumentManagerListener {
               override fun fileContentLoaded(file: VirtualFile, document: Document) {
                 super.fileContentLoaded(file, document)
@@ -62,7 +66,6 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
   override fun fileClosed(@NotNull source: FileEditorManager, @NotNull file: VirtualFile) {
     LOG.debug("fileClosed: ${file.path}")
   }
-/*
 
   override fun selectionChanged(@NotNull event: FileEditorManagerEvent) {
     super.selectionChanged(event)
@@ -74,18 +77,19 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
 
       MainService.getInstance()
 
-      val projectRelativePath = MainService.getInstance().getProjectRelativePath(event.manager.project, file)
+      val project = event.manager.project
 
-      val message = Message(type = MessageType.OPEN_DOC, path = projectRelativePath)
+      val projectRelativePath = MainService.getInstance().getProjectRelativePath(project, file)
+
+      val message = Message(type = MessageType.OPEN_DOC, projectName = project.name, path = projectRelativePath)
       val messageJson = message.json()
 
       NetworkService.getInstance().send(messageJson)
     }
   }
-*/
 }
 
-class DocumentUpdateListener(private val project: Project,
+private class DocumentUpdateListener(private val project: Project,
                              private val document: Document,
                              private val virtualFile: VirtualFile) : DocumentListener {
 
