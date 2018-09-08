@@ -1,22 +1,17 @@
 package service
 
 import com.beust.klaxon.Klaxon
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.diagnostic.Logger
-import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
+import com.intellij.openapi.ui.Messages
+import extension.wireMessagingStreams
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import model.Message
 import model.State
-import org.jetbrains.rpc.LOG
-import java.io.DataOutputStream
-import java.io.IOException
-import java.io.InputStreamReader
 import java.net.ServerSocket
 import java.net.Socket
-import java.util.*
-import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
 
 
@@ -39,38 +34,54 @@ class NetworkService {
 
       val socket = server.accept()
 
-      socket.readWriteSocket(toSocket, fromSocket)
+      MainService.getInstance().state.onNext(State.WRITER)
 
-      MainService.getInstance().state = State.WRITER
+      socket.wireMessagingStreams(toSocket, fromSocket)
+
+      MainService.getInstance().state.onNext(State.IDLE)
     }
   }
 
   fun initRemoteSocket(address: String, port: Int) {
     remoteSocketThread = thread {
 
-      val socket = Socket(address, port)
+      val socket: Socket
+      try {
+        socket = Socket(address, port)
+      } catch (e: Exception) {
+        LOG.error("Failed to join remote session", e)
 
-      socket.readWriteSocket(toSocket, fromSocket)
+        ApplicationManager.getApplication().invokeLater {
+          Messages.showErrorDialog("Failed to join remote session", "Oh, no!")
+        }
 
-      MainService.getInstance().state = State.READER
+        return@thread
+      }
+
+      MainService.getInstance().state.onNext(State.READER)
+
+      socket.wireMessagingStreams(toSocket, fromSocket)
+
+      MainService.getInstance().state.onNext(State.IDLE)
     }
   }
 
-  // inline maybe
   fun disconnect() {
-    MainService.getInstance().state = State.IDLE
+    MainService.getInstance().state.onNext(State.IDLE)
 
     // Not necessary currently, but when/if we run an infinite loop to accept many connections - will have to use this.
     //    serverSocketThread?.interrupt()
     //    remoteSocketThread?.interrupt()
   }
 
-  fun connect(address: String, port: String) {
+  fun connectRemote(address: String, port: String) {
     initRemoteSocket(address, port.toInt())
   }
 
   fun send(text: String) {
-    toSocket.onNext(text)
+    if (MainService.getInstance().state.value == State.WRITER) {
+      toSocket.onNext(text)
+    }
   }
 
   companion object {
@@ -80,70 +91,33 @@ class NetworkService {
   }
 
   init {
-    val messageSubject = MainService.getInstance().messageSubject
 
-    fromSocket.subscribe {
-      parseRawMessage(it, messageSubject)
-    }
+    // Accept only in READER mode
+    fromSocket
+//            .filter { MainService.getInstance().state.value == State.READER }
+            .map { Klaxon().parse<Message>(it)!! }
+            .doOnError { println(it) }
+            .subscribe {
+//              if (MainService.getInstance().state.value == State.READER) {
+                MainService.getInstance().incomingMessage.onNext(it)
+//              }
+            }
   }
 
-  private fun parseRawMessage(it: String, messageSubject: Subject<Message>) {
-    println(Thread.currentThread().name + ": " + it)
+  private fun parseRawMessage(rawMessage: String): Message {
+    LOG.debug("Raw message: $rawMessage")
 
-    try {
-      val message = Klaxon().parse<Message>(it)
+//    try {
+    val message = Klaxon().parse<Message>(rawMessage)
 
-      message?.let(messageSubject::onNext)
+//      message?.let(MainService.getInstance().incomingMessage::onNext)
 
-      println(message)
-    } catch (t: Throwable) {
-      LOG.info("Received non-parsable message=$it")
-    }
-  }
-}
+//      println(message)
+//    } catch (t: Throwable) {
+//      LOG.info("Received non-parsable message=$rawMessage")
+//    }
 
-private fun Socket.readWriteSocket(toSocket: Observable<String>, fromSocket: Subject<String>) {
-
-  fun socketHeartbeat(): Timer {
-    return fixedRateTimer(name = "socket-heartbeat", initialDelay = 0, period = 2000000) {
-      // TODO: socket heartbeat, update state accordingly
-    }
-  }
-
-  val socketHeartbeat = socketHeartbeat()
-
-  val out = DataOutputStream(getOutputStream())
-  fun writeToSocket(str: String) {
-    try {
-      out.writeBytes(str)
-    } catch (e: Exception) {
-      LOG
-      MainService.getInstance().state = State.IDLE
-    }
-  }
-
-  val subscription = toSocket
-          .subscribeOn(Schedulers.io())
-          .subscribe(::writeToSocket)
-
-  val reader = InputStreamReader(this.getInputStream())
-  try {
-
-    reader.buffered().lines().forEach(fromSocket::onNext)
-
-  } catch (ex: IOException) {
-
-    LOG.error("Socket error: ", ex)
-
-  } finally {
-
-    close()
-    subscription.dispose()
-    socketHeartbeat.cancel()
-
-    MainService.getInstance().state = State.IDLE
-
-    LOG.debug("Socket is closed now.")
+//    return Message()
+    return message!!
   }
 }
-
