@@ -8,7 +8,7 @@ import model.State
 import service.MainService
 import service.NetworkService
 
-class RemoteConnectAction : AnAction("Join Remote Session") {
+class RemoteConnectAction : AnAction("Join Session") {
 
   var defaultAddressPort = "localhost:4444"
 
@@ -22,7 +22,7 @@ class RemoteConnectAction : AnAction("Join Remote Session") {
 
       if (split.size == 2) {
         defaultAddressPort = data
-        NetworkService.getInstance().connect(split[0], split[1])
+        NetworkService.getInstance().connectRemote(split[0], split[1])
       }
     }
 
