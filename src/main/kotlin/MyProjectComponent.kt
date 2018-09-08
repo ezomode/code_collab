@@ -9,9 +9,9 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import extension.addReadabilityHook
 import model.Message
 import model.MessageType
-import model.State
 import org.jetbrains.annotations.NotNull
 import service.MainService
 import service.NetworkService
@@ -49,14 +49,7 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
     val document = FileDocumentManager.getInstance().getDocument(virtualFile)
 
     document?.let {
-
-      MainService.getInstance().stateSubject.subscribe { state ->
-        when (state) {
-          State.READER -> document.setReadOnly(true)
-          else -> document.setReadOnly(false)
-        }
-
-      }
+      document.addReadabilityHook()
 
       document.addDocumentListener(DocumentUpdateListener(myProject, document, virtualFile))
     }
@@ -90,10 +83,10 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
 }
 
 private class DocumentUpdateListener(private val project: Project,
-                             private val document: Document,
-                             private val virtualFile: VirtualFile) : DocumentListener {
+                                     private val document: Document,
+                                     private val virtualFile: VirtualFile) : DocumentListener {
 
   override fun documentChanged(event: DocumentEvent) {
-    MainService.getInstance().documentUpdates.onNext(Triple(project, document, virtualFile))
+    MainService.getInstance().documentUpdate.onNext(Triple(project, document, virtualFile))
   }
 }
