@@ -44,7 +44,7 @@
 
     <project-components>
         <component>
-            <implementation-class>MyProjectComponent</implementation-class>
+            <implementation-class>FileListenerComponent</implementation-class>
         </component>
     </project-components>
 </idea-plugin>

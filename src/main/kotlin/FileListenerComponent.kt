@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull
 import service.MainService
 import service.NetworkService
 
-class MyProjectComponent(project: Project) : AbstractProjectComponent(project) {
+class FileListenerComponent(project: Project) : AbstractProjectComponent(project) {
 
-  private val LOG = Logger.getInstance(MyProjectComponent::class.java)
+  private val LOG = Logger.getInstance(FileListenerComponent::class.java)
 
   override fun projectOpened() {
     myProject.messageBus
