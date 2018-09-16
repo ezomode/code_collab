@@ -5,7 +5,7 @@ import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase
 import model.Message
 import model.MessageType
 import model.State
-import service.MainService
+import service.CollabService
 
 class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
 
@@ -19,16 +19,16 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
     myFixture.configureByText("x.txt", "xxxxxxxx")
     val document = myFixture.editor.document
 
-    MainService.state.onNext(State.READER)
+    CollabService.state.onNext(State.READER)
     assert(!document.isWritable)
 
-    MainService.state.onNext(State.WRITER)
+    CollabService.state.onNext(State.WRITER)
     assert(document.isWritable)
 
-    MainService.state.onNext(State.READER)
+    CollabService.state.onNext(State.READER)
     assert(!document.isWritable)
 
-    MainService.state.onNext(State.IDLE)
+    CollabService.state.onNext(State.IDLE)
     assert(document.isWritable)
   }
 
@@ -40,7 +40,7 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
 
     assert(editorManager.currentFile != null)
 
-    MainService.state.onNext(State.READER)
+    CollabService.state.onNext(State.READER)
 
 //    assert(document == null)
     assert(project.isOpen)
@@ -49,7 +49,7 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
 //    assert(editorManager.currentFile == null)
 
     val projectName = project.name
-    MainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, path = "temp:///src/x.txt", projectName = projectName))
+    CollabService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, path = "temp:///src/x.txt", projectName = projectName))
 
     assert(editorManager.hasOpenedFile())
     assert(editorManager.currentFile != null)
@@ -78,8 +78,8 @@ class Test : LightCodeInsightTestCase() {
     configureByFile(filename)
     val vfile = VirtualFileManager.getInstance().findFileByUrl("file://$testDataPath$filename")!!
 
-    MainService.state.onNext(State.READER)
+    CollabService.state.onNext(State.READER)
 
-    MainService.incomingMessage.onNext(Message(MessageType.OPEN_DOC, "light_temp", vfile.url))
+    CollabService.incomingMessage.onNext(Message(MessageType.OPEN_DOC, "light_temp", vfile.url))
   }
 }

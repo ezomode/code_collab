@@ -13,7 +13,7 @@ import com.intellij.util.containers.ContainerUtil
 import model.Message
 import model.MessageType
 import model.State
-import service.MainService
+import service.CollabService
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -43,7 +43,7 @@ class DocumentUpdateTest : LightPlatformTestCase() {
       val editorManager = FileEditorManager.getInstance(testProject!!)
       assert(editorManager.openFiles.size == 0)
 
-      MainService.state.onNext(State.READER)
+      CollabService.state.onNext(State.READER)
 
 //    assert(ProjectManager.getInstance().openProjects.size == 1)
 
@@ -56,7 +56,7 @@ class DocumentUpdateTest : LightPlatformTestCase() {
 
 //      val path = "file:///Users/ak/my/centaur/testData/projectSet/untitled/src/java/A.java"
       val path = "/src/java/A.java"
-      MainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, "untitled", path, "QWEQWE"))
+      CollabService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, "untitled", path, "QWEQWE"))
 
 //      assert(editorManager.openFiles.size == 1)
       val currentFile = editorManager.openFiles[0]

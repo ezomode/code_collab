@@ -13,8 +13,7 @@ import extension.addReadabilityHook
 import model.Message
 import model.MessageType
 import org.jetbrains.annotations.NotNull
-import service.MainService
-import service.NetworkService
+import service.CollabService
 
 class FileListenerComponent(project: Project) : AbstractProjectComponent(project) {
 
@@ -58,12 +57,12 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
 
       val project = event.manager.project
 
-      val projectRelativePath = MainService.getProjectRelativePath(project, file)
+      val projectRelativePath = CollabService.getProjectRelativePath(project, file)
 
       val message = Message(type = MessageType.OPEN_DOC, projectName = project.name, path = projectRelativePath)
       val messageJson = message.json()
 
-      MainService.getInstance().send(messageJson)
+      CollabService.getInstance().send(messageJson)
     }
   }
 }
@@ -73,6 +72,6 @@ private class DocumentUpdateListener(private val project: Project,
                                      private val virtualFile: VirtualFile) : DocumentListener {
 
   override fun documentChanged(event: DocumentEvent) {
-    MainService.documentUpdate.onNext(Triple(project, document, virtualFile))
+    CollabService.documentUpdate.onNext(Triple(project, document, virtualFile))
   }
 }

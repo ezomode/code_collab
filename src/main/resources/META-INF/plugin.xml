@@ -24,7 +24,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-        <applicationService serviceImplementation="service.MainService" />
+        <applicationService serviceImplementation="service.CollabService" />
         <applicationService serviceImplementation="service.NetworkService" />
     </extensions>
 

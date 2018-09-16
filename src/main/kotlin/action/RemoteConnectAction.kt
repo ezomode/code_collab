@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.ui.Messages
 import model.State
-import service.MainService
+import service.CollabService
 import service.NetworkService
 
 class RemoteConnectAction : AnAction("Join Session") {
@@ -31,6 +31,6 @@ class RemoteConnectAction : AnAction("Join Session") {
 
   override fun update(e: AnActionEvent) {
 
-    e.presentation.isVisible = MainService.state.value == State.IDLE
+    e.presentation.isVisible = CollabService.state.value == State.IDLE
   }
 }

@@ -25,12 +25,12 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 
-class MainService {
+class CollabService {
 
-  private val LOG = Logger.getInstance(MainService::class.java)
+  private val LOG = Logger.getInstance(CollabService::class.java)
 
   init {
-    documentUpdate.debounce(200, TimeUnit.MILLISECONDS).subscribe(this@MainService::sendDocument)
+    documentUpdate.debounce(200, TimeUnit.MILLISECONDS).subscribe(this@CollabService::sendDocument)
 
     incomingMessage.subscribe(::handleIncomingMessage)
 
@@ -60,7 +60,7 @@ class MainService {
   }
 
   fun send(text: String) {
-    if (MainService.state.value == State.WRITER) {
+    if (CollabService.state.value == State.WRITER) {
       NetworkService.toSocket.onNext(text)
     }
   }
@@ -146,8 +146,8 @@ class MainService {
   }
 
   companion object {
-    fun getInstance(): MainService {
-      return ServiceManager.getService(MainService::class.java)
+    fun getInstance(): CollabService {
+      return ServiceManager.getService(CollabService::class.java)
     }
 
     var state = BehaviorSubject.createDefault(State.IDLE)!! // interesting warning on nullability check, could not infer non-nullable without !!

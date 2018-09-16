@@ -3,7 +3,7 @@ package action
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import model.State
-import service.MainService
+import service.CollabService
 import service.NetworkService
 
 class DisconnectAction : AnAction("Disconnect") {
@@ -15,6 +15,6 @@ class DisconnectAction : AnAction("Disconnect") {
 
   override fun update(e: AnActionEvent) {
 
-    e.presentation.isVisible = MainService.state.value != State.IDLE
+    e.presentation.isVisible = CollabService.state.value != State.IDLE
   }
 }

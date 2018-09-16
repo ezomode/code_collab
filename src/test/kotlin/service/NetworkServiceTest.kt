@@ -27,7 +27,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
 
     val stateCounter = AtomicInteger(0)
 
-    MainService.state.subscribe {
+    CollabService.state.subscribe {
       when (stateCounter.get()) {
         0 -> TestCase.assertEquals(State.IDLE, it)
         1 -> TestCase.assertEquals(State.WRITER, it)
@@ -79,7 +79,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
         assert(it.startsWith("tick"))
 
         if (counter.get() == 3) {
-          assertEquals(State.READER, MainService.state.value)
+          assertEquals(State.READER, CollabService.state.value)
 
           timer.cancel()
           isr.close()
@@ -96,7 +96,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
 
     assertEquals(3, counter.get())
 
-    assertEquals(State.IDLE, MainService.state.value)
+    assertEquals(State.IDLE, CollabService.state.value)
   }
 
   // Still could not figure out the WriteCommandAction vs project being disposed...

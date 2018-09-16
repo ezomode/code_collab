@@ -17,7 +17,7 @@ import kotlin.concurrent.thread
 
 class NetworkService {
 
-  private val LOG = Logger.getInstance(MainService::class.java)
+  private val LOG = Logger.getInstance(CollabService::class.java)
 
   private var serverSocketThread: Thread? = null
   private var remoteSocketThread: Thread? = null
@@ -31,11 +31,11 @@ class NetworkService {
 
       val socket = server.accept()
 
-      MainService.state.onNext(State.WRITER)
+      CollabService.state.onNext(State.WRITER)
 
       socket.wireMessagingStreams(toSocket, fromSocket)
 
-      MainService.state.onNext(State.IDLE)
+      CollabService.state.onNext(State.IDLE)
     }
   }
 
@@ -55,16 +55,16 @@ class NetworkService {
         return@thread
       }
 
-      MainService.state.onNext(State.READER)
+      CollabService.state.onNext(State.READER)
 
       socket.wireMessagingStreams(toSocket, fromSocket)
 
-      MainService.state.onNext(State.IDLE)
+      CollabService.state.onNext(State.IDLE)
     }
   }
 
   fun disconnect() {
-    MainService.state.onNext(State.IDLE)
+    CollabService.state.onNext(State.IDLE)
 
     // Not necessary currently, but when/if we run an infinite loop to accept many connections - will have to use this.
     //    serverSocketThread?.interrupt()
@@ -89,12 +89,12 @@ class NetworkService {
 
     // Accept only in READER mode
     fromSocket
-//            .filter { MainService.state.value == State.READER }
+//            .filter { CollabService.state.value == State.READER }
             .map { Klaxon().parse<Message>(it)!! }
             .doOnError { println(it) }
             .subscribe {
-              //              if (MainService.state.value == State.READER) {
-              MainService.incomingMessage.onNext(it)
+              //              if (CollabService.state.value == State.READER) {
+              CollabService.incomingMessage.onNext(it)
 //              }
             }
   }
@@ -105,7 +105,7 @@ class NetworkService {
 //    try {
     val message = Klaxon().parse<Message>(rawMessage)
 
-//      message?.let(MainService.incomingMessage::onNext)
+//      message?.let(CollabService.incomingMessage::onNext)
 
 //      println(message)
 //    } catch (t: Throwable) {
