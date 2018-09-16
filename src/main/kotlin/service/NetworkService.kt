@@ -19,9 +19,6 @@ class NetworkService {
 
   private val LOG = Logger.getInstance(MainService::class.java)
 
-  val fromSocket: Subject<String> = PublishSubject.create()
-  val toSocket: Subject<String> = PublishSubject.create()
-
   private var serverSocketThread: Thread? = null
   private var remoteSocketThread: Thread? = null
 
@@ -78,16 +75,14 @@ class NetworkService {
     initRemoteSocket(address, port.toInt())
   }
 
-  fun send(text: String) {
-    if (MainService.state.value == State.WRITER) {
-      toSocket.onNext(text)
-    }
-  }
-
   companion object {
     fun getInstance(): NetworkService {
       return ServiceManager.getService(NetworkService::class.java)
     }
+
+    val toSocket: Subject<String> = PublishSubject.create()
+
+    private val fromSocket: Subject<String> = PublishSubject.create()
   }
 
   init {
@@ -98,8 +93,8 @@ class NetworkService {
             .map { Klaxon().parse<Message>(it)!! }
             .doOnError { println(it) }
             .subscribe {
-//              if (MainService.state.value == State.READER) {
-                MainService.incomingMessage.onNext(it)
+              //              if (MainService.state.value == State.READER) {
+              MainService.incomingMessage.onNext(it)
 //              }
             }
   }

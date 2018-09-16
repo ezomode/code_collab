@@ -43,8 +43,7 @@ class DocumentUpdateTest : LightPlatformTestCase() {
       val editorManager = FileEditorManager.getInstance(testProject!!)
       assert(editorManager.openFiles.size == 0)
 
-      val mainService = MainService.getInstance()
-      mainService.state.onNext(State.READER)
+      MainService.state.onNext(State.READER)
 
 //    assert(ProjectManager.getInstance().openProjects.size == 1)
 
@@ -57,7 +56,7 @@ class DocumentUpdateTest : LightPlatformTestCase() {
 
 //      val path = "file:///Users/ak/my/centaur/testData/projectSet/untitled/src/java/A.java"
       val path = "/src/java/A.java"
-      mainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, "untitled", path, "QWEQWE"))
+      MainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, "untitled", path, "QWEQWE"))
 
 //      assert(editorManager.openFiles.size == 1)
       val currentFile = editorManager.openFiles[0]

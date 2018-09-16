@@ -63,7 +63,7 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
       val message = Message(type = MessageType.OPEN_DOC, projectName = project.name, path = projectRelativePath)
       val messageJson = message.json()
 
-      NetworkService.getInstance().send(messageJson)
+      MainService.getInstance().send(messageJson)
     }
   }
 }

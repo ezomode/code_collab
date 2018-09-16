@@ -19,16 +19,16 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
     myFixture.configureByText("x.txt", "xxxxxxxx")
     val document = myFixture.editor.document
 
-    MainService.getInstance().state.onNext(State.READER)
+    MainService.state.onNext(State.READER)
     assert(!document.isWritable)
 
-    MainService.getInstance().state.onNext(State.WRITER)
+    MainService.state.onNext(State.WRITER)
     assert(document.isWritable)
 
-    MainService.getInstance().state.onNext(State.READER)
+    MainService.state.onNext(State.READER)
     assert(!document.isWritable)
 
-    MainService.getInstance().state.onNext(State.IDLE)
+    MainService.state.onNext(State.IDLE)
     assert(document.isWritable)
   }
 
@@ -40,8 +40,7 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
 
     assert(editorManager.currentFile != null)
 
-    val mainService = MainService.getInstance()
-    mainService.state.onNext(State.READER)
+    MainService.state.onNext(State.READER)
 
 //    assert(document == null)
     assert(project.isOpen)
@@ -50,7 +49,7 @@ class IncomingMessageHandlingTest : LightCodeInsightFixtureTestCase() {
 //    assert(editorManager.currentFile == null)
 
     val projectName = project.name
-    mainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, path = "temp:///src/x.txt", projectName = projectName))
+    MainService.incomingMessage.onNext(Message(MessageType.UPDATE_DOC, path = "temp:///src/x.txt", projectName = projectName))
 
     assert(editorManager.hasOpenedFile())
     assert(editorManager.currentFile != null)
@@ -79,10 +78,8 @@ class Test : LightCodeInsightTestCase() {
     configureByFile(filename)
     val vfile = VirtualFileManager.getInstance().findFileByUrl("file://$testDataPath$filename")!!
 
+    MainService.state.onNext(State.READER)
 
-    val mainService = MainService.getInstance()
-    mainService.state.onNext( State.READER)
-
-    mainService.incomingMessage.onNext(Message(MessageType.OPEN_DOC, "light_temp", vfile.url))
+    MainService.incomingMessage.onNext(Message(MessageType.OPEN_DOC, "light_temp", vfile.url))
   }
 }

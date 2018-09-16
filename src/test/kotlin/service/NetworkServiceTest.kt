@@ -27,7 +27,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
 
     val stateCounter = AtomicInteger(0)
 
-    MainService.getInstance().state.subscribe {
+    MainService.state.subscribe {
       when (stateCounter.get()) {
         0 -> TestCase.assertEquals(State.IDLE, it)
         1 -> TestCase.assertEquals(State.WRITER, it)
@@ -61,7 +61,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
     ns.connectRemote("localhost", "4444")
 
     val timer = fixedRateTimer(name = "socket-timer", initialDelay = 0, period = 200) {
-      ns.send("tick " + Date() + "\n")
+      NetworkService.toSocket.onNext("tick " + Date() + "\n")
     }
 
     val counter = AtomicInteger(0)
@@ -79,7 +79,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
         assert(it.startsWith("tick"))
 
         if (counter.get() == 3) {
-          assertEquals(State.READER, MainService.getInstance().state.value)
+          assertEquals(State.READER, MainService.state.value)
 
           timer.cancel()
           isr.close()
@@ -96,7 +96,7 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
 
     assertEquals(3, counter.get())
 
-    assertEquals(State.IDLE, MainService.getInstance().state.value)
+    assertEquals(State.IDLE, MainService.state.value)
   }
 
   // Still could not figure out the WriteCommandAction vs project being disposed...
@@ -135,14 +135,14 @@ class NetworkServiceTest : LightPlatformCodeInsightFixtureTestCase() {
     val ns = NetworkService()
     ns.initServerSocket()
 
-    ns.fromSocket.subscribe { println("fromSocket $it") }
+//    NetworkService.fromSocket.subscribe { println("fromSocket $it") }
 //        ns.toSocket.subscribe { println("toSocket $it") }
 
     val socket = Socket("localhost", 4444)
     val dataOutputStream = DataOutputStream(socket.getOutputStream())
 
     fixedRateTimer(name = "socket-timer", initialDelay = 0, period = 2000) {
-      ns.send("NetworkService tick " + Date() + "\n")
+      NetworkService.toSocket.onNext("NetworkService tick " + Date() + "\n")
 
       dataOutputStream.writeBytes("test socket tick " + Date() + "\n")
     }

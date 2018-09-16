@@ -54,9 +54,15 @@ class MainService {
             text = document.text
     ).json()
 
-    NetworkService.getInstance().send(message)
+    send(message)
 
     LOG.debug("Send message: $message")
+  }
+
+  fun send(text: String) {
+    if (MainService.state.value == State.WRITER) {
+      NetworkService.toSocket.onNext(text)
+    }
   }
 
   private fun handleIncomingMessage(m: Message) {
@@ -171,13 +177,13 @@ class MainService {
 
       val message = Message(MessageType.GRAB_LOCK, projectName).json()
 
-      NetworkService.getInstance().send(message)
+      NetworkService.toSocket.onNext(message)
 
       state.onNext(State.WRITER)
     }
   }
 
-  fun findProject(projectName: String): Project? {
+  private fun findProject(projectName: String): Project? {
 
     val projects = ProjectManager.getInstance().openProjects
 
