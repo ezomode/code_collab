@@ -29,12 +29,6 @@ class MainService {
 
   private val LOG = Logger.getInstance(MainService::class.java)
 
-  var state = BehaviorSubject.createDefault(State.IDLE)!! // interesting warning on nullability check, could not infer non-nullable without !!
-
-  val documentUpdate: Subject<Triple<Project, Document, VirtualFile>> = PublishSubject.create()
-
-  val incomingMessage: Subject<Message> = PublishSubject.create()
-
   init {
     documentUpdate.debounce(200, TimeUnit.MILLISECONDS).subscribe(this@MainService::sendDocument)
 
@@ -149,17 +143,23 @@ class MainService {
     fun getInstance(): MainService {
       return ServiceManager.getService(MainService::class.java)
     }
-  }
 
-  fun getProjectRelativePath(project: Project, virtualFile: VirtualFile): String {
+    var state = BehaviorSubject.createDefault(State.IDLE)!! // interesting warning on nullability check, could not infer non-nullable without !!
 
-    val projectBasePath = project.basePath.toString()
-    val filePath = virtualFile.path
+    val documentUpdate: Subject<Triple<Project, Document, VirtualFile>> = PublishSubject.create()
+
+    val incomingMessage: Subject<Message> = PublishSubject.create()
+
+    fun getProjectRelativePath(project: Project, virtualFile: VirtualFile): String {
+
+      val projectBasePath = project.basePath.toString()
+      val filePath = virtualFile.path
 
 //            if (!filePath.startsWith(projectBasePath))
 //                throw IllegalArgumentException("Not a permanent project file") // Scratch files and other non-project files are not supported.
 
-    return filePath.removePrefix(projectBasePath)
+      return filePath.removePrefix(projectBasePath)
+    }
   }
 
   fun getStatus(): String {
@@ -184,4 +184,3 @@ class MainService {
     return ContainerUtil.find(projects) { project1 -> projectName == project1.name }
   }
 }
-

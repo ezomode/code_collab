@@ -34,11 +34,11 @@ class NetworkService {
 
       val socket = server.accept()
 
-      MainService.getInstance().state.onNext(State.WRITER)
+      MainService.state.onNext(State.WRITER)
 
       socket.wireMessagingStreams(toSocket, fromSocket)
 
-      MainService.getInstance().state.onNext(State.IDLE)
+      MainService.state.onNext(State.IDLE)
     }
   }
 
@@ -58,16 +58,16 @@ class NetworkService {
         return@thread
       }
 
-      MainService.getInstance().state.onNext(State.READER)
+      MainService.state.onNext(State.READER)
 
       socket.wireMessagingStreams(toSocket, fromSocket)
 
-      MainService.getInstance().state.onNext(State.IDLE)
+      MainService.state.onNext(State.IDLE)
     }
   }
 
   fun disconnect() {
-    MainService.getInstance().state.onNext(State.IDLE)
+    MainService.state.onNext(State.IDLE)
 
     // Not necessary currently, but when/if we run an infinite loop to accept many connections - will have to use this.
     //    serverSocketThread?.interrupt()
@@ -79,7 +79,7 @@ class NetworkService {
   }
 
   fun send(text: String) {
-    if (MainService.getInstance().state.value == State.WRITER) {
+    if (MainService.state.value == State.WRITER) {
       toSocket.onNext(text)
     }
   }
@@ -94,12 +94,12 @@ class NetworkService {
 
     // Accept only in READER mode
     fromSocket
-//            .filter { MainService.getInstance().state.value == State.READER }
+//            .filter { MainService.state.value == State.READER }
             .map { Klaxon().parse<Message>(it)!! }
             .doOnError { println(it) }
             .subscribe {
-//              if (MainService.getInstance().state.value == State.READER) {
-                MainService.getInstance().incomingMessage.onNext(it)
+//              if (MainService.state.value == State.READER) {
+                MainService.incomingMessage.onNext(it)
 //              }
             }
   }
@@ -110,7 +110,7 @@ class NetworkService {
 //    try {
     val message = Klaxon().parse<Message>(rawMessage)
 
-//      message?.let(MainService.getInstance().incomingMessage::onNext)
+//      message?.let(MainService.incomingMessage::onNext)
 
 //      println(message)
 //    } catch (t: Throwable) {

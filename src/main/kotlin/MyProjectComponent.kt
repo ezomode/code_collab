@@ -24,18 +24,6 @@ class MyProjectComponent(project: Project) : AbstractProjectComponent(project) {
     myProject.messageBus
             .connect()
             .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, FileEditorManagerListenerImpl(myProject))
-
-/*
-    myProject.messageBus
-            .connectRemote()
-            .subscribe(AppTopics.FILE_DOCUMENT_SYNC, object : FileDocumentManagerListener {
-              override fun fileContentLoaded(file: VirtualFile, document: Document) {
-                super.fileContentLoaded(file, document)
-
-                LOG.debug("fileContentLoaded: ${file.path}")
-              }
-            })
-*/
   }
 }
 
@@ -68,11 +56,9 @@ private class FileEditorManagerListenerImpl(val myProject: Project) : FileEditor
 
     event.newEditor?.file?.let { file ->
 
-      MainService.getInstance()
-
       val project = event.manager.project
 
-      val projectRelativePath = MainService.getInstance().getProjectRelativePath(project, file)
+      val projectRelativePath = MainService.getProjectRelativePath(project, file)
 
       val message = Message(type = MessageType.OPEN_DOC, projectName = project.name, path = projectRelativePath)
       val messageJson = message.json()
@@ -87,6 +73,6 @@ private class DocumentUpdateListener(private val project: Project,
                                      private val virtualFile: VirtualFile) : DocumentListener {
 
   override fun documentChanged(event: DocumentEvent) {
-    MainService.getInstance().documentUpdate.onNext(Triple(project, document, virtualFile))
+    MainService.documentUpdate.onNext(Triple(project, document, virtualFile))
   }
 }

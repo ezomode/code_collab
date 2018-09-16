@@ -15,8 +15,6 @@ class GrabWriteLockAction : AnAction("Grab Lock") {
 
   override fun update(e: AnActionEvent) {
 
-    val mainService = MainService.getInstance()
-
-    e.presentation.isVisible = mainService.state.value == State.READER
+    e.presentation.isVisible = MainService.state.value == State.READER
   }
 }

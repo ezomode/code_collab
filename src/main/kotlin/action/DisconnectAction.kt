@@ -15,8 +15,6 @@ class DisconnectAction : AnAction("Disconnect") {
 
   override fun update(e: AnActionEvent) {
 
-    val service = MainService.getInstance()
-
-    e.presentation.isVisible = service.state.value != State.IDLE
+    e.presentation.isVisible = MainService.state.value != State.IDLE
   }
 }
